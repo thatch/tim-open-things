@@ -12,7 +12,7 @@ gTopRoundoverRadius = 4;
 gSideRoundoverRadius = 4;
 gMainWidth = 16;
 gTopWidth = 30;
-gRibWidth = 3.5;
+gRibWidth = 3.4;
 gHoleSpacing = 20;
 gBeltWide = 14; // 1/4" belt + slop
 gBeltPitch = 2.032; // MXL in mm
@@ -21,8 +21,8 @@ e = 0.02;
 
 // screw_clearance_diameter, socket_head_clearance_diameter, nut outside diameter
 // TODO untested numbers, these should move to a common include.
-M3 = [3.5, 6, 6];
-M5 = [5.5, 9, 9];
+M3 = [3.5, 6.4, 6.4];
+M5 = [5.5, 9.4, 9.4];
 M8 = [8, 13, 13];
 
 module InsetHole(x) {
