@@ -1,0 +1,5 @@
+This repo contains 3-D models for things you can build.
+
+You will likely need `OpenScad <http://www.openscad.org>`_ to compile them.
+
+Licensed under the BSD 2-clause license, see COPYING
