@@ -1,7 +1,7 @@
 %.inc.scad: %.inc
 	./bezcompiler $< 
 
-%.stl: %.scad
+%.stl: %.scad %.inc.scad
 	openscad -o $@ $<
 
 .PHONY: examples
