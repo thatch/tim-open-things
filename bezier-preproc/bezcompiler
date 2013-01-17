@@ -25,6 +25,12 @@ def mirror(a, relative_to):
   delta = sub2d(a, relative_to)
   return add2d(relative_to, delta)
 
+def distance_to_line(line_1, line_2, point):
+  line_length = sub2d(line_2, line_1)
+  normal = (line_length[0]**2 + line_length[1]**2)**0.5
+  return abs((point[0] - line_1[0]) * (line_2[1] - line_1[1]) -
+             (point[1] - line_1[1]) * (line_2[0] - line_1[0])) / normal
+
 def skip_dupe(it):
   prev = None
   for i in it:
@@ -92,10 +98,36 @@ class Bezier(object):
       if len(self.curves[c]) == 1:
         buf.append(tuple(self.curves[c][0]))
       else:
-        for i in xrange(self.steps+1):
-          t = float(i) / self.steps
-          p = self._reduce(self.curves[c], t)
-          buf.append(p)
+        if self.error == 0:
+          # Original, all-non-duplicate-points included algorithm
+          for i in xrange(self.steps+1):
+            t = float(i) / self.steps
+            p = self._reduce(self.curves[c], t)
+            buf.append(p)
+        else:
+          # Subdivide by powers of 2, a smarter approximation on low-degree
+          # curves.  This tends to cull segments that are straighter, while
+          # leaving more where it has more of a curve.
+          # N.b. Has a serious bug if the midpoint of the curve is near the
+          # modpoint of start and end.  If you need to draw such a curve, set
+          # $error=0 to use old method.
+          def ev(t):
+            return self._reduce(self.curves[c], t)
+
+          def recursive(low, high):
+            half = low + (high - low) / 2
+            a = ev(low)
+            b = ev(high)
+            m = ev(half)
+            dist = abs(distance_to_line(a, b, m))
+            if dist > self.error:
+              recursive(low, half)
+              recursive(half, high)
+            else:
+              buf.append(b)
+
+          buf.append(tuple(self.curves[c][0]))
+          recursive(0.0, 1.0)
 
     # TODO winding order appears CW
     try:
