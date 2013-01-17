@@ -114,20 +114,22 @@ class Bezier(object):
           def ev(t):
             return self._reduce(self.curves[c], t)
 
-          def recursive(low, high):
+          def recursive(low, high, first_time=False):
             half = low + (high - low) / 2
             a = ev(low)
             b = ev(high)
             m = ev(half)
             dist = abs(distance_to_line(a, b, m))
-            if dist > self.error:
+            # A z-shaped curve needs to be divided, even though its midpoint is
+            # the same as the midpoint of the line.
+            if dist > self.error or first_time:
               recursive(low, half)
               recursive(half, high)
             else:
               buf.append(b)
 
           buf.append(tuple(self.curves[c][0]))
-          recursive(0.0, 1.0)
+          recursive(0.0, 1.0, True)
 
     # TODO winding order appears CW
     try:
