@@ -12,6 +12,16 @@ def lerp(a, b, f):
   dy = b[1] - a[1]
   return (a[0] + f*dx, a[1] + f*dy)
 
+def add2d(a, b):
+  return a[0] + b[0], a[1] + b[1]
+
+def invert2d(a):
+  return -a[0], -a[1]
+
+def mirror(a, relative_to):
+  delta = add2d(relative_to, invert2d(a))
+  return add2d(relative_to, delta)
+
 def skip_dupe(it):
   prev = None
   for i in it:
@@ -20,6 +30,22 @@ def skip_dupe(it):
       prev = i
 
 class ParseError(Exception): pass
+
+class CubicSpline(object):
+  def __init__(self, point_list):
+    self.curves = []
+    if len(point_list) % 3 != 1:
+      raise ValueError('Wrong number of points, expected 3n+1')
+
+    last_control_point = None
+    for i in range(len(point_list)/3):
+      a, b, c, d = point_list[i*3:i*3+4]
+      if b is None:
+        b = mirror(last_control_point, a)
+
+      self.curves.append([a, b, c, d])
+      last_control_point = c
+
 
 class Bezier(object):
   """Represents a bezier curve of arbitrary degree."""
@@ -46,7 +72,11 @@ class Bezier(object):
           raise ParseError('Unknown command line %r' % (line,))
       else:
         # TODO handle multiple curves with hard corners
-        c.curves.append(eval(line, {}, {}))
+        obj = eval(line, {}, {'cubicspline': CubicSpline})
+        if isinstance(obj, CubicSpline):
+          c.curves.extend(obj.curves)
+        else:
+          c.curves.append(obj)
     return c
 
   def get_output(self):
