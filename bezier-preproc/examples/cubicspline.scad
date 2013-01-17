@@ -1,2 +1,2 @@
 include <cubicspline.inc.scad>;
-linear_extrude(height=20) x();
+linear_extrude(height=12) x();
