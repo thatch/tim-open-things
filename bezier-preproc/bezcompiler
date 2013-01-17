@@ -12,6 +12,13 @@ def lerp(a, b, f):
   dy = b[1] - a[1]
   return (a[0] + f*dx, a[1] + f*dy)
 
+def skip_dupe(it):
+  prev = None
+  for i in it:
+    if i != prev:
+      yield i
+      prev = i
+
 class ParseError(Exception): pass
 
 class Bezier(object):
@@ -47,16 +54,23 @@ class Bezier(object):
     # TODO make this quite a bit faster
     # TODO handle $error
     for c in range(len(self.curves)):
-      for i in xrange(self.steps+1):
-        t = float(i) / self.steps
-        p = self._reduce(self.curves[c], t)
-        # Skip duplicate points for multi-curve
-        if buf and p == buf[-1]: continue
-        buf.append(p)
+      # Fast path for single points, explicitly tuplify for the format operator
+      # to work later, and avoid doing many pointless _reduce operations.
+      if len(self.curves[c]) == 1:
+        buf.append(tuple(self.curves[c][0]))
+      else:
+        for i in xrange(self.steps+1):
+          t = float(i) / self.steps
+          p = self._reduce(self.curves[c], t)
+          buf.append(p)
 
     # TODO winding order appears CW
-    return ('module x() { polygon([%s], convexity=2); }\n' %
-            (','.join('[%.6f,%.6f]' % p for p in buf),))
+    try:
+      return ('module x() { polygon([%s], convexity=10); }\n' %
+              (','.join(skip_dupe('[%.6f,%.6f]' % p for p in buf)),))
+    except:
+      print "Buf", buf
+      raise
 
   @classmethod
   def _reduce(cls, points, t):
