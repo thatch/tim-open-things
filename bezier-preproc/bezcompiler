@@ -15,11 +15,14 @@ def lerp(a, b, f):
 def add2d(a, b):
   return a[0] + b[0], a[1] + b[1]
 
+def sub2d(a, b):
+  return add2d(b, invert2d(a))
+
 def invert2d(a):
   return -a[0], -a[1]
 
 def mirror(a, relative_to):
-  delta = add2d(relative_to, invert2d(a))
+  delta = sub2d(a, relative_to)
   return add2d(relative_to, delta)
 
 def skip_dupe(it):
