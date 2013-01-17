@@ -1,3 +1,6 @@
+EXAMPLE_NAMES = bez fifthorder cubicspline roundedcorners
+EXAMPLE_STLS = $(patsubst %,examples/%.stl,$(EXAMPLE_NAMES))
+
 %.inc.scad: %.inc
 	./bezcompiler $<
 
@@ -7,4 +10,8 @@
 .PRECIOUS: %.inc.scad
 
 .PHONY: examples
-examples: examples/fifthorder.stl examples/bez.stl examples/cubicspline.stl
+examples: $(EXAMPLE_STLS)
+
+.PHONY: clean
+clean:
+	rm -f examples/*.inc.scad examples/*.stl
