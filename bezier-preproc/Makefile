@@ -1,4 +1,4 @@
-EXAMPLE_NAMES = bez fifthorder cubicspline roundedcorners
+EXAMPLE_NAMES = bez fifthorder cubicspline roundedcorners cusp zee
 EXAMPLE_STLS = $(patsubst %,examples/%.stl,$(EXAMPLE_NAMES))
 
 %.inc.scad: %.inc
