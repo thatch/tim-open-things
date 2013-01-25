@@ -7,7 +7,7 @@ EXAMPLE_STLS = $(patsubst %,examples/%.stl,$(EXAMPLE_NAMES))
 %.stl: %.scad %.inc.scad
 	openscad -o $@ $<
 
-.PRECIOUS: %.inc.scad
+.PRECIOUS: *.inc.scad
 
 .PHONY: examples
 examples: $(EXAMPLE_STLS)
