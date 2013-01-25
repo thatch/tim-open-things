@@ -62,7 +62,8 @@ class Bezier(object):
   def __init__(self):
     self.error = 0.1
     self.steps = 100
-    self.curves = []
+    self.curves = {}
+    self.current_curve = 'x'
 
   @classmethod
   def parse(cls, data):
@@ -71,6 +72,8 @@ class Bezier(object):
       line = line.strip()
       if line.startswith('#') or not line:
         continue
+      elif line.endswith(':'):
+        c.current_curve = line.strip()[:-1]
       elif '=' in line:
         key, value = line.split('=')
         if key == '$error':
@@ -80,29 +83,31 @@ class Bezier(object):
         else:
           raise ParseError('Unknown command line %r' % (line,))
       else:
+        # Lazily set to list, to avoid empty x object
+        c.curves.setdefault(c.current_curve, [])
         # TODO handle multiple curves with hard corners
         obj = eval(line, {}, {'cubicspline': CubicSpline})
         if isinstance(obj, CubicSpline):
-          c.curves.extend(obj.curves)
+          c.curves[c.current_curve].extend(obj.curves)
         else:
-          c.curves.append(obj)
+          c.curves[c.current_curve].append(obj)
     return c
 
-  def get_output(self):
+  def get_output(self, curves, name):
     buf = []
     # TODO make this quite a bit faster
     # TODO handle $error
-    for c in range(len(self.curves)):
+    for i in range(len(curves)):
       # Fast path for single points, explicitly tuplify for the format operator
       # to work later, and avoid doing many pointless _reduce operations.
-      if len(self.curves[c]) == 1:
-        buf.append(tuple(self.curves[c][0]))
+      if len(curves[i]) == 1:
+        buf.append(tuple(curves[i][0]))
       else:
         if self.error == 0:
           # Original, all-non-duplicate-points included algorithm
           for i in xrange(self.steps+1):
             t = float(i) / self.steps
-            p = self._reduce(self.curves[c], t)
+            p = self._reduce(curves[i], t)
             buf.append(p)
         else:
           # Subdivide by powers of 2, a smarter approximation on low-degree
@@ -112,7 +117,7 @@ class Bezier(object):
           # modpoint of start and end.  If you need to draw such a curve, set
           # $error=0 to use old method.
           def ev(t):
-            return self._reduce(self.curves[c], t)
+            return self._reduce(curves[i], t)
 
           def recursive(low, high, first_time=False):
             half = low + (high - low) / 2
@@ -128,16 +133,22 @@ class Bezier(object):
             else:
               buf.append(b)
 
-          buf.append(tuple(self.curves[c][0]))
+          buf.append(tuple(curves[i][0]))
           recursive(0.0, 1.0, True)
 
     # TODO winding order appears CW
     try:
-      return ('module x() { polygon([%s], convexity=10); }\n' %
-              (','.join(skip_dupe('[%.6f,%.6f]' % p for p in buf)),))
+      return ('module %s() { polygon([%s], convexity=10); }\n' %
+              (name, ','.join(skip_dupe('[%.6f,%.6f]' % p for p in buf)),))
     except:
       print "Buf", buf
       raise
+
+  def get_full_output(self):
+    buf = []
+    for name, curve in self.curves.iteritems():
+      buf.append(self.get_output(curve, name))
+    return ''.join(buf)
 
   @classmethod
   def _reduce(cls, points, t):
@@ -156,7 +167,7 @@ def main(files):
       data = f.read()
     b = Bezier.parse(data)
     with open(get_final_name(fn), 'w') as f:
-      f.write(b.get_output())
+      f.write(b.get_full_output())
 
 if __name__ == '__main__':
   main(sys.argv[1:])
