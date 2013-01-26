@@ -55,59 +55,32 @@ class CubicSpline(object):
       self.curves.append([a, b, c, d])
       last_control_point = c
 
-
 class Bezier(object):
-  """Represents a bezier curve of arbitrary degree."""
-
-  def __init__(self):
+  """Represents a Bezier curve of arbitrary degree, and other segments."""
+  def __init__(self, name):
     self.error = 0.1
     self.steps = 100
-    self.curves = {}
-    self.current_curve = 'x'
+    self.name = name
+    self.curves = []
 
-  @classmethod
-  def parse(cls, data):
-    c = cls()
-    for line in data.splitlines():
-      line = line.strip()
-      if line.startswith('#') or not line:
-        continue
-      elif line.endswith(':'):
-        c.current_curve = line.strip()[:-1]
-      elif '=' in line:
-        key, value = line.split('=')
-        if key == '$error':
-          c.error = float(value)
-        elif key == '$steps':
-          c.steps = int(value)
-        else:
-          raise ParseError('Unknown command line %r' % (line,))
-      else:
-        # Lazily set to list, to avoid empty x object
-        c.curves.setdefault(c.current_curve, [])
-        # TODO handle multiple curves with hard corners
-        obj = eval(line, {}, {'cubicspline': CubicSpline})
-        if isinstance(obj, CubicSpline):
-          c.curves[c.current_curve].extend(obj.curves)
-        else:
-          c.curves[c.current_curve].append(obj)
-    return c
+  def empty(self):
+    return not self.curves
 
-  def get_output(self, curves, name):
+  def get_output(self):
     buf = []
     # TODO make this quite a bit faster
     # TODO handle $error
-    for i in range(len(curves)):
+    for i in range(len(self.curves)):
       # Fast path for single points, explicitly tuplify for the format operator
       # to work later, and avoid doing many pointless _reduce operations.
-      if len(curves[i]) == 1:
-        buf.append(tuple(curves[i][0]))
+      if len(self.curves[i]) == 1:
+        buf.append(tuple(self.curves[i][0]))
       else:
         if self.error == 0:
           # Original, all-non-duplicate-points included algorithm
           for i in xrange(self.steps+1):
             t = float(i) / self.steps
-            p = self._reduce(curves[i], t)
+            p = self._reduce(self.curves[i], t)
             buf.append(p)
         else:
           # Subdivide by powers of 2, a smarter approximation on low-degree
@@ -117,7 +90,7 @@ class Bezier(object):
           # modpoint of start and end.  If you need to draw such a curve, set
           # $error=0 to use old method.
           def ev(t):
-            return self._reduce(curves[i], t)
+            return self._reduce(self.curves[i], t)
 
           def recursive(low, high, first_time=False):
             half = low + (high - low) / 2
@@ -133,22 +106,18 @@ class Bezier(object):
             else:
               buf.append(b)
 
-          buf.append(tuple(curves[i][0]))
+          # Explicitly include beginning point, but not ending point since that
+          # should be handled by the second (or further) recursion.
+          buf.append(tuple(self.curves[i][0]))
           recursive(0.0, 1.0, True)
 
     # TODO winding order appears CW
     try:
       return ('module %s() { polygon([%s], convexity=10); }\n' %
-              (name, ','.join(skip_dupe('[%.6f,%.6f]' % p for p in buf)),))
+              (self.name, ','.join(skip_dupe('[%.6f,%.6f]' % p for p in buf)),))
     except:
       print "Buf", buf
       raise
-
-  def get_full_output(self):
-    buf = []
-    for name, curve in self.curves.iteritems():
-      buf.append(self.get_output(curve, name))
-    return ''.join(buf)
 
   @classmethod
   def _reduce(cls, points, t):
@@ -161,11 +130,61 @@ class Bezier(object):
       b.append(lerp(points[i], points[i+1], t))
     return cls._reduce(b, t)
 
+
+class BezierCurves(object):
+  """Represents a .inc file, containing Bezier objects."""
+
+  def __init__(self):
+    self.curves = {}
+
+  @classmethod
+  def parse(cls, data):
+    c = cls()
+    current_curve = 'x'
+    c.curves[current_curve] = Bezier(current_curve)
+
+    for line in data.splitlines():
+      line = line.strip()
+      if line.startswith('#') or not line:
+        continue
+      elif line.endswith(':'):
+        current_curve = line.strip()[:-1]
+        c.curves[current_curve] = Bezier(current_curve)
+      elif '=' in line:
+        key, value = line.split('=')
+        if key == '$error':
+          c.curves[current_curve].error = float(value)
+        elif key == '$steps':
+          c.curves[current_curve].steps = int(value)
+        else:
+          raise ParseError('Unknown command line %r' % (line,))
+      else:
+        # TODO handle multiple curves with hard corners
+        obj = eval(line, {}, {'cubicspline': CubicSpline})
+        if isinstance(obj, CubicSpline):
+          c.curves[current_curve].curves.extend(obj.curves)
+        else:
+          c.curves[current_curve].curves.append(obj)
+
+    # Remove empty curves (primarily for the default 'x' curve)
+    for i, v in c.curves.iteritems():
+      if v.empty():
+        del c.curves[i]
+
+    return c
+
+  def get_full_output(self):
+    buf = []
+    for curve in self.curves.itervalues():
+      buf.append(curve.get_output())
+    return ''.join(buf)
+
+
 def main(files):
   for fn in files:
     with open(fn) as f:
       data = f.read()
-    b = Bezier.parse(data)
+    b = BezierCurves.parse(data)
     with open(get_final_name(fn), 'w') as f:
       f.write(b.get_full_output())
 
