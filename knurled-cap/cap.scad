@@ -62,11 +62,11 @@ module Knob(outerRad=8, pegRad=2.5, capRad=5.5, pegHeight=3, innerHeight=4,
       else
         TeeKnob(h=thick, r1=outerRad, r2=outerRad*1.8, chamfer=chamfer);
       // inner cutout
-      translate([0,0,baseThick+e]) cylinder(h=innerHeight, r=capRad);
+      translate([0,0,baseThick+e]) cylinder(h=innerHeight, r=capRad, $fn=32);
     }
     // peg
     translate([0,0,baseThick-e])
-      cylinder(h=pegHeight, r=pegRad);
+      cylinder(h=pegHeight, r=pegRad, $fn=16);
   }
 }
 // vim: ft=c sw=2 sts=2 ts=2 et
