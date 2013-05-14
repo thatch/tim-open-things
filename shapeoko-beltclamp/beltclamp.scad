@@ -3,8 +3,8 @@
 // Motivated by http://www.thingiverse.com/thing:33881 not being strong enough
 // when I initially printed it.
 
-// Upright: printed, but not stress tested, looks sturdy
-// Top: completely untested
+// Upright: printed, tested lightly
+// Top: printed, tested
 
 gThick = 8;
 gRibHeight = 6;
@@ -124,8 +124,3 @@ union() {
   Upright();
   translate([0,-gMainHeight/2-12,0]) rotate([0,0,180]) Top();
 }
-//union() {
-//  for(i=[1:4]) {
-//    translate([0,-15*i,0]) Top();
-//  }
-//}
