@@ -1,0 +1,7 @@
+270mm wide/tall
+3mm corner radius
+hole for M3 in each corner
+
+top wedge: 373.5mm (est, round up)
+35mm vertical
+est <5mm radius
