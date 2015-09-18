@@ -1,0 +1,6 @@
+*.x3g
+*.stl
+*.gcode
+.*.sw[op]
+.DS_Store
+*.py[co]
