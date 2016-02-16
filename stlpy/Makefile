@@ -1,3 +1,6 @@
+.PHONY: all
+all: files/cube_ascii.stl files/demo_ascii.stl files/ramp_ascii.stl
+
 .PHONY: test
 
 test:

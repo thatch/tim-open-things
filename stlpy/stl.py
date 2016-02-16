@@ -47,8 +47,10 @@ class Mesh(object):
             for face in self.facets:
                 # TODO output normal
                 fo.write('facet normal 0 0 -1\n')
+                fo.write('outer loop\n')
                 for idx in face:
                     fo.write('vertex %f %f %f\n' % self.vertices[idx])
+                fo.write('endloop\n')
                 fo.write('endfacet\n')
             fo.write('endsolid foo\n')
 
