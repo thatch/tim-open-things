@@ -12,10 +12,10 @@ module SpacerHole(thick=9) {
     translate([16,4.5,-1]) cylinder(d=3.4,h=thick+2);
 }
 
-module LowerHull(w,r,thick) {
+module LowerHull(w,r,thick,d=0) {
     hull() {
-        for(x=[w/2-r,-(w/2-r)])
-            translate([x,r]) cylinder(r=r,h=thick);
+        for(x=[w/2-r-d,-(w/2-r-d)])
+            translate([x,r-d]) cylinder(r=r,h=thick);
         for(x=[w/2-8-r,-(w/2-8-r)])
             translate([x,-8+r]) cylinder(r=r,h=thick);
     }
@@ -23,7 +23,7 @@ module LowerHull(w,r,thick) {
 
 module SpacerMount(w=40,r=2,thick=9) {
     difference() {
-        LowerHull(w,r,thick);
+        LowerHull(w,2,thick);
         hull() {
             for(x=[w/2-7-r,-(w/2-7-r)])
                 for(y=[r+0.01,r*2])
@@ -56,8 +56,6 @@ module SpacerPair() {
     }
 }
 
-translate([0,-40,0]) SpacerPair();
-
 module ThinCylinder(r,h,t) {
     difference() {
         cylinder(r=r,h=h);
@@ -82,6 +80,7 @@ module ChamferCylinder(r,h,c=2) {
 }
 
 module FanMount(w=40,r=4,thick=3) {
+    // Bottom flat part
     difference() {
         union() {
             hull() {
@@ -90,7 +89,7 @@ module FanMount(w=40,r=4,thick=3) {
                         scale([x_scale,y_scale,1])
                         translate([w/2-r,w/2-r])
                         cylinder(r=r,h=thick);
-                translate([0,-20,0]) LowerHull(w,r,thick);
+                translate([0,-20,0]) LowerHull(w,2,thick);
             }
             for(x_scale=[1,-1])
                 for(y_scale=[1,-1])
@@ -102,13 +101,25 @@ module FanMount(w=40,r=4,thick=3) {
             scale([x_scale,1,1])
             translate([16,-16,-0.01]) cylinder(d=3.4,h=100);
     }
+    // Top part
     difference() {
-        translate([0,-20,0]) LowerHull(w,r,thick+11);
-        cube([40,40,40],center=true);
+        translate([0,-20,0]) LowerHull(w,2,thick+11,4);
+        //cube([40,40,40],center=true);
         for(x_scale=[1,-1])
             scale([x_scale,1,1])
             translate([6,-20-4.5,-1]) cylinder(d=2.9,h=100);
     }
 }
 
+/* For printing */
+translate([0,-40,0]) SpacerPair();
+/* Assembly */
+//translate([0,-20,12]) SpacerPair();
 FanMount($fn=64);
+
+/*
+projection(cut=false) rotate([0,90,0]) {
+translate([0,-20,12]) SpacerPair();
+FanMount($fn=64);
+}
+*/
