@@ -1,3 +1,5 @@
+include <../libs/trig.scad>;
+
 // enlarged to account for shrink
 g3mm = 3.45;
 g3mmnut = 5.85;
@@ -11,6 +13,7 @@ gSideClampHole2 = 10;
 gTopClampY1 = 15;
 gTopClampY2 = 30;
 gClampOffset = 10;
+gSideClampOffset = 0;
 
 module NutTrap(x,h=100) {
     cylinder(d=x/0.866,h=h,$fn=6);
@@ -35,20 +38,28 @@ module Fillet(r,h=100) {
 
 module SideBody() {
     difference() {
-        translate([0,-4,0]) cube([22,24,5]);
-        translate([-1,-5,3.5]) cube([11,27,5]);
+        translate([0,-4,0]) cube([22,24,5+gSideClampOffset]);
+        translate([-1,-5,3.5]) cube([11,27,5+gSideClampOffset]);
         translate([14,17,-1]) cylinder(d=g2mm,h=100,$fn=32);
         translate([14+gMicroswitchHoleSpacing,17,-1]) cylinder(d=g2mm,h=100,$fn=32);
         translate([8,gSideClampHole1,-1]) cylinder(d=g3mm,h=100,$fn=32);
         translate([8,gSideClampHole2,-1]) cylinder(d=g3mm,h=100,$fn=32);
     }
-    
 }
+
+gSidePos1 = [8,18];
+gSidePos2 = [11,4];
+gSideCutoutRad = 25;
 
 module SideClamp() {
     difference() {
-        translate([3,-4,0]) cube([9,18,5]);
-        translate([30+10,15,-1]) cylinder(r=30,h=100,$fn=100);
+        hull() for(c=[[4,-2],[11,-2],[4,18],gSidePos1,gSidePos2])
+            translate(c) cylinder(r=2,h=5,$fn=32);
+        translate([0,0,-1])
+            translate(CircleCircleIntersection(gSidePos1, gSidePos2, 2, gSideCutoutRad))
+            cylinder(r=gSideCutoutRad,h=10,$fn=100);
+        //translate(gSidePos1) cylinder(r=2,h=10);
+        //translate(gSidePos2) cylinder(r=2,h=10);
         translate([8,gSideClampHole1,-1]) union() {
             cylinder(d=g3mm,h=100,$fn=32);
             translate([0,0,6.1]) scale([1,1,-1]) NutTrap(g3mmnut,3);
@@ -121,7 +132,6 @@ module TopClamp() {
                 cylinder(d=g3mm,h=100);
                 NutTrap(g3mmnut,3);
             }
-        
     }
     /* clamp holes support */
     for(y=[gTopClampY1,gTopClampY2])
@@ -137,4 +147,7 @@ TopBody($fn=32);
 translate([7,gClampOffset+2,0]) TopClamp($fn=32);
 
 translate([-25,15,0]) SideBody();
-translate([-15,-2,0]) rotate([0,0,90]) SideClamp();
+/* to visualise together  */
+/* translate([-25,15,5]) SideClamp(); */
+/* for printing */
+translate([-15,-3,0]) rotate([0,0,90]) SideClamp();
