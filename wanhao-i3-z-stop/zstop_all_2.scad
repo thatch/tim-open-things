@@ -39,6 +39,10 @@ module Fillet(r,h=100) {
 module SideBody() {
     difference() {
         translate([0,-4,0]) cube([22,24,5+gSideClampOffset]);
+        if(gSideClampOffset > 0) {
+            translate([1,-4.01,5.01]) cube([22,16,10]);
+            translate([0.5,0.5,5.01]) linear_extrude(height=10, convexity=3) SideClampOutline();
+        }
         translate([-1,-5,3.5]) cube([11,27,5+gSideClampOffset]);
         translate([14,17,-1]) cylinder(d=g2mm,h=100,$fn=32);
         translate([14+gMicroswitchHoleSpacing,17,-1]) cylinder(d=g2mm,h=100,$fn=32);
@@ -51,13 +55,19 @@ gSidePos1 = [8,18];
 gSidePos2 = [11,4];
 gSideCutoutRad = 25;
 
-module SideClamp() {
+module SideClampOutline() {
     difference() {
         hull() for(c=[[4,-2],[11,-2],[4,18],gSidePos1,gSidePos2])
-            translate(c) cylinder(r=2,h=5,$fn=32);
+            translate(c) circle(r=2,$fn=32);
         translate([0,0,-1])
             translate(CircleCircleIntersection(gSidePos1, gSidePos2, 2, gSideCutoutRad))
-            cylinder(r=gSideCutoutRad,h=10,$fn=100);
+            circle(r=gSideCutoutRad,$fn=256);
+    }
+}
+
+module SideClamp() {
+    difference() {
+        linear_extrude(height=5, convexity=3) SideClampOutline();
         //translate(gSidePos1) cylinder(r=2,h=10);
         //translate(gSidePos2) cylinder(r=2,h=10);
         translate([8,gSideClampHole1,-1]) union() {
@@ -148,6 +158,6 @@ translate([7,gClampOffset+2,0]) TopClamp($fn=32);
 
 translate([-25,15,0]) SideBody();
 /* to visualise together  */
-/* translate([-25,15,5]) SideClamp(); */
+/* translate([-25,15,6+gSideClampOffset]) SideClamp(); */
 /* for printing */
 translate([-15,-3,0]) rotate([0,0,90]) SideClamp();
