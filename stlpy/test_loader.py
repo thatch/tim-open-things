@@ -16,6 +16,11 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(len(m.facets), 12)
         self.assertEqual(len(m.vertex_cache), 8)
 
+    def test_cube_loader_binary(self):
+        m = stl.Mesh('files/cube-binary.stl')
+        self.assertEqual(len(m.facets), 12)
+        self.assertEqual(len(m.vertex_cache), 8)
+
     def test_loader_ascii(self):
         m = stl.Mesh('files/demo-ascii.stl')
         self.assertEqual(len(m.facets), 1188)

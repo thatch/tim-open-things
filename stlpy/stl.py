@@ -4,10 +4,20 @@ import struct
 import optparse
 
 AXES = {'x': 0, 'y': 1, 'z': 2}
+COUNT_FORMAT = '<I'
+TRIANGLE_FORMAT = '<12fH'
+
 
 class NotAscii(ValueError): pass
 
+
+# TODO make this faster; make a file wrapper
+def _read_struct(fo, fmt):
+    return struct.unpack(fmt, fo.read(struct.calcsize(fmt)))
+
+
 class Mesh(object):
+
     def __init__(self, filename=None):
         # TODO hide vertex_cache
         self.vertex_cache = {}
@@ -23,23 +33,36 @@ class Mesh(object):
                     f.seek(0, 0)
                     self.load_binary(f)
 
+    def _add_vertex(self, v):
+        idx = self.vertex_cache.get(v, None)
+        if idx is None:
+            idx = len(self.vertex_cache)
+            self.vertex_cache[v] = idx
+            self.vertices.append(v)
+        return idx
+
     def load_ascii(self, fo):
         # TODO use a better storage system, like halfedges
         for face in parse_ascii(fo):
             t = []
             for v in face:
-                idx = self.vertex_cache.get(v, None)
-                if idx is None:
-                    idx = len(self.vertex_cache)
-                    self.vertex_cache[v] = idx
-                    self.vertices.append(v)
-                t.append(idx)
+                t.append(self._add_vertex(v))
             # N.b. The facets list only contains indices
             self.facets.append(tuple(t))
 
-    def load_binary(fo):
-        # TODO
-        raise NotImplementedError
+    def load_binary(self, fo):
+        header = fo.read(80)
+        count = _read_struct(fo, COUNT_FORMAT)[0]
+        for i in range(count):
+            # the 12 items are normal v1 v2 v3
+            items = _read_struct(fo, TRIANGLE_FORMAT)
+            t = []
+            for j in range(3, 12, 3):
+                # TODO is this a tuple already?
+                v = items[j:j+3]
+                t.append(self._add_vertex(v))
+            # TODO ignoring attribute_count?
+            self.facets.append(tuple(t))
 
     def write_stl(self, filename):
         with open(filename, 'w') as fo:
@@ -94,7 +117,7 @@ class Mesh(object):
 
         self.vertices = new_vertices
         self._fix_vertex_cache()
-   
+
     def _fix_vertex_cache(self): 
         self.vertex_cache = dict((v, k) for k, v in enumerate(self.vertices))
 
@@ -120,7 +143,7 @@ class Mesh(object):
             for i in face:
                 if i in seen:
                     pass
-            
+
 
 def min_elementwise(a, b):
     v = []
@@ -163,6 +186,9 @@ def parse_ascii(fo):
     # TODO skip 0-size faces before parsing float
 
     solid = fo.readline()
+    # There's a real-world example showing we can't just substring check for
+    # 'solid' on the first line; prefix check seems to be the most reliable.
+    # See https://github.com/cmpolis/convertSTL/issues/2
     if not solid.lower().startswith('solid'):
         raise NotAscii()
 
