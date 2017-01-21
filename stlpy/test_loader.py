@@ -7,19 +7,19 @@ class StlTestHelpers(object):
         self.assertEqual(len(stl1.facets), len(stl2.facets))
         print sorted(stl1.vertices)
         print sorted(stl2.vertices)
-        for k, v in stl1.vertex_cache.iteritems():
-            self.assertTrue(k in stl2.vertex_cache)
+        for k, v in stl1._vertex_cache.iteritems():
+            self.assertTrue(k in stl2._vertex_cache)
 
 class TestLoader(unittest.TestCase):
     def test_cube_loader_ascii(self):
         m = stl.Mesh('files/cube-ascii.stl')
         self.assertEqual(len(m.facets), 12)
-        self.assertEqual(len(m.vertex_cache), 8)
+        self.assertEqual(len(m._vertex_cache), 8)
 
     def test_cube_loader_binary(self):
         m = stl.Mesh('files/cube-binary.stl')
         self.assertEqual(len(m.facets), 12)
-        self.assertEqual(len(m.vertex_cache), 8)
+        self.assertEqual(len(m._vertex_cache), 8)
 
     def test_loader_ascii(self):
         m = stl.Mesh('files/demo-ascii.stl')

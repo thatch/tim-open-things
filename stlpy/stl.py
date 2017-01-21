@@ -15,12 +15,10 @@ class NotAscii(ValueError): pass
 def _read_struct(fo, fmt):
     return struct.unpack(fmt, fo.read(struct.calcsize(fmt)))
 
-
 class Mesh(object):
 
     def __init__(self, filename=None):
-        # TODO hide vertex_cache
-        self.vertex_cache = {}
+        self._vertex_cache = {}
         self.vertices = []
         self.facets = []
 
@@ -34,10 +32,10 @@ class Mesh(object):
                     self.load_binary(f)
 
     def _add_vertex(self, v):
-        idx = self.vertex_cache.get(v, None)
+        idx = self._vertex_cache.get(v, None)
         if idx is None:
-            idx = len(self.vertex_cache)
-            self.vertex_cache[v] = idx
+            idx = len(self._vertex_cache)
+            self._vertex_cache[v] = idx
             self.vertices.append(v)
         return idx
 
@@ -119,7 +117,7 @@ class Mesh(object):
         self._fix_vertex_cache()
 
     def _fix_vertex_cache(self): 
-        self.vertex_cache = dict((v, k) for k, v in enumerate(self.vertices))
+        self._vertex_cache = dict((v, k) for k, v in enumerate(self.vertices))
 
     # TODO is_manifold
     # TODO split, merge
@@ -130,7 +128,7 @@ class Mesh(object):
     def bounding_box(self):
         mins = [None] * 3
         maxes = [None] * 3
-        for v in self.vertex_cache.values():
+        for v in self._vertex_cache.values():
             mins = min_elementwise(mins, v)
             maxes = max_elementwise(maxes, v)
         return (mins, maxes)
