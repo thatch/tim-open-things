@@ -10,8 +10,9 @@ gGridY = 55;
 
 /* So the bins don't fit *too* tightly together */
 gTopSlop = 0.6;
-// TODO I'm not sure this works, maybe because of poylgon circles?
-gExtWidth = 0.45;
+// TODO This appears to have rounding issues with s3d; add 0.01 for it
+gExtWidth = 0.4;
+gWall = gExtWidth*3;
 
 // TODO test print for HF, Stanley sizes
 //gHeight=47.8; // for HF
@@ -61,7 +62,7 @@ module Fillet(a, r) {
     }
 }
 
-module Bin(x=1,y=1,wall=gExtWidth*3,feet=true,cutaway=false) {
+module Bin(x=1,y=1,wall=gWall,feet=true,cutaway=false) {
     inside_wall_w = (x*gGridX)-(wall*2)-gTopSlop;
     inside_wall_h = (y*gGridY)-(wall*2)-gTopSlop;
     difference() {
@@ -77,7 +78,7 @@ module Bin(x=1,y=1,wall=gExtWidth*3,feet=true,cutaway=false) {
                 linear_extrude(height=gPegDepth+2,convexity=4)
                 for(x_scale=[1,-1]) for(y_scale=[1,-1])
                     scale([x_scale,y_scale])
-                    translate([-inside_wall_w/2,-inside_wall_h/2]) Fillet(10, 3, $fn=32);
+                    translate([-inside_wall_w/2,-inside_wall_h/2]) Fillet(11, 3, $fn=32);
                 //Ess(6,6,3);
             }
         }
