@@ -17,6 +17,8 @@ gWall = gExtWidth*3;
 // TODO test print for HF, Stanley sizes
 //gHeight=47.8; // for HF
 gHeight=40.9; // for Stanley
+gBaseThick=2;
+gFilletRad=3;
 
 gPegHole = 2.5;
 gPegHead = 6;
@@ -61,6 +63,27 @@ module Fillet(a, r) {
         square([a,a]);
     }
 }
+e=0.001;
+module BaseOutline(x,y,wall,feet) {
+    inside_wall_w = (x*gGridX)-(wall*2)-gTopSlop;
+    inside_wall_h = (y*gGridY)-(wall*2)-gTopSlop;
+    ///RoundRect(x*gGridX-gTopSlop,y*gGridY-gTopSlop,3,$fn=32);
+    difference() {
+        RoundRect(inside_wall_w,inside_wall_h,3-wall,$fn=32);
+        for(x_scale=[1,-1]) for(y_scale=[1,-1])
+            scale([x_scale,y_scale])
+            translate([-inside_wall_w/2-e,-inside_wall_h/2-e]) Fillet(11, 3, $fn=32);
+    }
+}
+
+module BaseFillet(x,y,wall,feet) {
+    translate([0,0,gFilletRad]) minkowski() {
+        sphere(r=gFilletRad,$fn=32);
+        linear_extrude(convexity=2,height=1) offset(delta=-gFilletRad) BaseOutline(x,y,wall,feet);
+    }
+}
+
+
 
 module Bin(x=1,y=1,wall=gWall,feet=true,cutaway=false) {
     inside_wall_w = (x*gGridX)-(wall*2)-gTopSlop;
@@ -72,7 +95,7 @@ module Bin(x=1,y=1,wall=gWall,feet=true,cutaway=false) {
                 RoundRect(inside_wall_w,inside_wall_h,3-wall,$fn=32);
             }
             // Floor
-            linear_extrude(height=2)
+            linear_extrude(height=gBaseThick+gFilletRad)
             RoundRect(x*gGridX-gTopSlop,y*gGridY-gTopSlop,3,$fn=32);
             if(feet) {
                 linear_extrude(height=gPegDepth+2,convexity=4)
@@ -88,6 +111,7 @@ module Bin(x=1,y=1,wall=gWall,feet=true,cutaway=false) {
                 translate([(x*gGridX-gTopSlop)/2,(y*gGridY-gTopSlop)/2,-1])
                 rotate([0,0,180+45]) translate([(gPegCircle-gPegHead)/2,0])
                 cylinder(d=gPegHole,h=gPegDepth+1,$fn=32);
+            translate([0,0,gBaseThick]) BaseFillet(x,y,wall,true);
         }
         if(cutaway) {
             translate([-inside_wall_w/2,-inside_wall_h/2,-1])
