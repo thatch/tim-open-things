@@ -5,6 +5,7 @@ gFanThick = 10; // hole right in the middle?
 gMotorHoleSpacing = 31;
 gFanHoleSpacing = 32;
 gGrillThick = 3;
+gBottomFilletRad = 5;
 
 /* Orientation is that "up" faces into the heatsink. */
 module Spacer(w=40,r=2,thick=gSpacerThick) {
@@ -39,11 +40,11 @@ module SpacerMount(w=40,r=2,thick=9) {
                 for(y=[r+0.01,r*2])
                     translate([x,y]) circle(r=r);
         }
-        // this is rotated, so can't linear_extrude easily
-        hull() {
-            for(y=[-r-1,-10])
-            translate([0,y,thick])
-            rotate([0,90,0]) cylinder(r=2,h=100,center=true);
+        // this is rotated, and mostly for looks but also assembly affordance
+        translate([-50,-8+gBottomFilletRad-0.01,thick-gBottomFilletRad+0.01]) rotate([180,-90,0])
+        linear_extrude(height=100,convexity=2) difference() {
+            square([gBottomFilletRad,gBottomFilletRad]);
+            circle(r=gBottomFilletRad);
         }
         for(x_scale=[1,-1])
             scale([x_scale,1,1])
@@ -51,6 +52,7 @@ module SpacerMount(w=40,r=2,thick=9) {
                 cylinder(d=3.4,h=100);
                 translate([0,0,thick-3]) cylinder(d=5.7,h=100);
             }
+        translate([0,-4.5,-1]) linear_extrude(height=2.5) offset(delta=0.1) AlignmentShape();
     }
 }
 
@@ -90,6 +92,11 @@ module ChamferCylinder(r,h,c=2) {
     translate([0,0,h-c]) cylinder(r1=r,r2=r-c,h=c);
 }
 
+module AlignmentShape() {
+    hull() for(x=[6,-6]) translate([x,0])
+    circle(d=2,$fn=32);
+}
+
 gOffset = 0.5;
 module FanMount(w=40,r=4,thick=3) {
     // Bottom flat part
@@ -118,7 +125,10 @@ module FanMount(w=40,r=4,thick=3) {
     }
     // Top part
     difference() {
-        translate([0,-20,0]) LowerHull(w,2,thick+11,4);
+        union() {
+            translate([0,-20,0]) LowerHull(w,2,thick+11,4);
+            translate([0,-20-4.5,1]) linear_extrude(height=thick+11) AlignmentShape();
+        }
         //cube([40,40,40],center=true);
         for(x_scale=[1,-1])
             scale([x_scale,1,1])
