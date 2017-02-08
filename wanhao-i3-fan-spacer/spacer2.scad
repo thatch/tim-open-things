@@ -1,11 +1,16 @@
 /* This is a bit of a hack since angled holes are required. */
 gSpacerThick = 9;
 gSpacerPlusHeatsinkThick = 11;
-gFanThick = 10; // hole right in the middle?
+// Use the real-world measurement here, e.g. 10.8mm for the stock fan.
+gFanThick = 10.8;
 gMotorHoleSpacing = 31;
 gFanHoleSpacing = 32;
 gGrillThick = 3;
 gBottomFilletRad = 5;
+// Only set to true if you have a counterbore on the non-label side.
+gAlignmentHoles = false;
+gAlignmentHoleDepth = 3.5;
+gAlignmentShape = false;
 
 /* Orientation is that "up" faces into the heatsink. */
 module Spacer(w=40,r=2,thick=gSpacerThick) {
@@ -16,10 +21,6 @@ module Spacer(w=40,r=2,thick=gSpacerThick) {
                 translate([x,y]) circle(r=r);
 }
 
-module SpacerHole(thick=gSpacerThick) {
-    // TODO
-    //translate([16,4.5,-1]) cylinder(d=3.4,h=thick+2);
-}
 
 /* For reuse building the two parts to line up */
 module LowerHull(w,r,thick,d=0) {
@@ -52,7 +53,8 @@ module SpacerMount(w=40,r=2,thick=9) {
                 cylinder(d=3.4,h=100);
                 translate([0,0,thick-3]) cylinder(d=5.7,h=100);
             }
-        translate([0,-4.5,-1]) linear_extrude(height=2.5) offset(delta=0.1) AlignmentShape();
+        if(gAlignmentShape)
+            translate([0,-4.5,-1]) linear_extrude(height=2.5) offset(delta=0.1) AlignmentShape();
     }
 }
 
@@ -64,8 +66,6 @@ module SpacerPair() {
             translate([-38/2,1.32,0]) cube([38,1.7,8]);
             SpacerMount($fn=32);
         }
-        SpacerHole($fn=32);
-        scale([-1,1,1]) SpacerHole($fn=32);
     }
 }
 
@@ -110,24 +110,20 @@ module FanMount(w=40,r=4,thick=3) {
                         cylinder(r=r,h=thick);
                 translate([0,-20,0]) LowerHull(w,2,thick);
             }
-            translate([0,gOffset,0]) for(x_scale=[1,-1])
+            if(gAlignmentHoles) translate([0,gOffset,0]) for(x_scale=[1,-1])
                 for(y_scale=[1,-1])
                 scale([x_scale,y_scale,1])
                 translate([16,16,0.01])
-                    ChamferCylinder(5.6/2,thick+3.5,0.6);
+                    ChamferCylinder(5.6/2,thick+gAlignmentHoleDepth,0.6);
         }
         translate([0,gOffset,0]) FanGrill(r=16,height=thick-1);
-        // TOOD angle this
-        /*for(x_scale=[1,-1])
-            scale([x_scale,1,1])
-            translate([16,-16,-0.01]) cylinder(d=3.4,h=100);
-        */
     }
     // Top part
     difference() {
         union() {
-            translate([0,-20,0]) LowerHull(w,2,thick+11,4);
-            translate([0,-20-4.5,1]) linear_extrude(height=thick+11) AlignmentShape();
+            translate([0,-20,0]) LowerHull(w,2,thick+gFanThick,4);
+            if(gAlignmentShape)
+                translate([0,-20-4.5,1]) linear_extrude(height=thick+gFanThick) AlignmentShape();
         }
         //cube([40,40,40],center=true);
         for(x_scale=[1,-1])
